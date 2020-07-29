@@ -28,14 +28,24 @@ const paramproperties = {
   }
 }
 
+const initialState = {
+  route: 'signin',
+  isSignedIn : false,
+  user : {
+    id: '',
+    name: '',
+    email: '',
+    password: '',
+    entries: 0,
+    joined: ''
+  }
+}
+
 class App extends React.Component {
 
   constructor() {
     super()
-    this.state = {
-      route: 'signin',
-      isSignedIn : false
-    }
+    this.state = initialState;
   }
 
   onRouteChange = (route) => {
@@ -45,10 +55,27 @@ class App extends React.Component {
     }
     else
     {
-      this.setState({ isSignedIn : false})
+      this.setState(initialState)
     }
     this.setState({ route: route })
   }
+
+  loadUser = (data) => {
+    this.setState({ user : {
+      id: data.id,
+      name: data.name,
+      email: data.email,
+      password: data.password,
+      entries: data.entries,
+      joined: data.joined
+    }})
+  }
+
+  updateEntries = (count) => {
+    this.setState(Object.assign(this.state.user , {  entries : count}))
+  }
+
+  
 
   render() {
     return (
@@ -59,13 +86,13 @@ class App extends React.Component {
         {this.state.route === 'home' ?
           <div>
             <Logo />
-            <Rank />
-            <ImgaeLinkForm />
+            <Rank user={this.state.user}/>
+            <ImgaeLinkForm updateEntries={this.updateEntries} user={this.state.user}/>
           </div>
           :
           (this.state.route === 'signin' ?
-            <SignIn onRouteChange={this.onRouteChange} />
-            : <Register onRouteChange={this.onRouteChange}/>
+            <SignIn loadUser={this.loadUser} onRouteChange={this.onRouteChange} />
+            : <Register loadUser={this.loadUser} onRouteChange={this.onRouteChange}/>
           )
         }
       </div>

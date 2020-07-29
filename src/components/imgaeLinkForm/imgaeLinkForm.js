@@ -1,11 +1,7 @@
 import React from 'react';
-import Clarifai from 'clarifai';
 import FaceRecognition from '../faceRecognition/faceRecognition';
 import './imgaeLinkForm.css';
 
-const app = new Clarifai.App({
-    apiKey: 'f2434bacdc0d415b9056a0e17a281b3e'
-});
 
 class ImgaeLinkForm extends React.Component {
     constructor() {
@@ -28,21 +24,44 @@ class ImgaeLinkForm extends React.Component {
         const width = image.width;
         const height = image.height;
         return {
-            topRow : faceBoxCoordinates.top_row * height ,
-            leftCol : faceBoxCoordinates.left_col * width,
-            bottomRow : height - (faceBoxCoordinates.bottom_row * height) ,
-            rightCol : width - (faceBoxCoordinates.right_col * width)
+            topRow: faceBoxCoordinates.top_row * height,
+            leftCol: faceBoxCoordinates.left_col * width,
+            bottomRow: height - (faceBoxCoordinates.bottom_row * height),
+            rightCol: width - (faceBoxCoordinates.right_col * width)
         }
     }
 
     drawFaceBox = (box) => {
-        this.setState({ box : box})
+        this.setState({ box: box })
     }
 
-    onButtonSubmit = () => {
-        this.setState({ imageUrl: this.state.input })
-        app.models.predict(Clarifai.FACE_DETECT_MODEL, this.state.input)
-            .then(response => { return this.drawFaceBox(this.getFaceBoxCoordinates(response)) })
+    onImageSubmit = () => {
+        const { user } = this.props;
+        this.setState({ imageUrl: this.state.input });
+            fetch('https://facefinderapi.herokuapp.com/imageUrl', {
+                method: 'put',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    input : this.state.input
+                })
+            })
+            .then(response => response.json())
+            .then(response => {
+                if (response) {
+                    fetch('https://facefinderapi.herokuapp.com/image', {
+                        method: 'put',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            id: user.id
+                        })
+                    })
+                        .then(response => response.json())
+                        .then(count => {
+                            this.props.updateEntries(count);
+                        })
+                }
+                this.drawFaceBox(this.getFaceBoxCoordinates(response))
+            })
             .catch(err => console.log(err))
     }
 
@@ -56,10 +75,10 @@ class ImgaeLinkForm extends React.Component {
                     <input type='text' className='f4 w-70 pa2' onChange={this.onInputChange} name="input" />
                     <button className='f4 w-30 grow ph3 pv2 white'
                         style={{ backgroundColor: '#185a9d' }}
-                        onClick={this.onButtonSubmit}>Detect</button>
+                        onClick={this.onImageSubmit}>Detect</button>
                 </div>
                 <div className="center">
-                    <FaceRecognition source={this.state.imageUrl} box={this.state.box}/>
+                    <FaceRecognition source={this.state.imageUrl} box={this.state.box} />
                 </div>
             </div>
         )
